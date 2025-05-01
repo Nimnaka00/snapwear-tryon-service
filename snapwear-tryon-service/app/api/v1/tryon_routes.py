@@ -1,25 +1,17 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, File, UploadFile, HTTPException, Response
 from app.services.tryon_service import run_tryon
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/tryon", tags=["tryon"])
 
-class TryOnRequest(BaseModel):
-    userImage: str     # "data:image/png;base64,..."
-    productImage: str  # same
-    bodyPart: str      # e.g. "upper_body", "lower_body", "dresses"
-
-class TryOnResponse(BaseModel):
-    outputImage: str   # "data:image/png;base64,..."
-
-@router.post("/", response_model=TryOnResponse)
-async def tryon(req: TryOnRequest):
+@router.post("/", summary="Generate a try-on image")
+async def tryon_endpoint(
+    photo: UploadFile = File(..., description="Your selfie"),
+    product: UploadFile = File(..., description="Product image")
+):
+    src_bytes   = await photo.read()
+    cloth_bytes = await product.read()
     try:
-        out = await run_tryon(
-            user_b64=req.userImage,
-            product_b64=req.productImage,
-            region=req.bodyPart,
-        )
-        return TryOnResponse(outputImage=out)
+        out_png = run_tryon(src_bytes, cloth_bytes)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(500, f"Generation failed: {e}")
+    return Response(content=out_png, media_type="image/png")
