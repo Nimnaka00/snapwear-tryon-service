@@ -1,27 +1,29 @@
-from .typing import bytes
-from app.models.diffusers_loader import get_pipeline
+import os
+from uuid import uuid4
+from app.models.diffusers_loader import load_pipeline
 from PIL import Image
-import io
 
-def run_tryon(source_bytes: bytes, cloth_bytes: bytes) -> bytes:
-    """
-    1) Load images from bytes
-    2) Call the OOTDiffusion pipeline
-    3) Return the resulting PNG bytes
-    """
-    pipe = get_pipeline()
+# load once
+pipe = load_pipeline()
 
-    src_img = Image.open(io.BytesIO(source_bytes)).convert("RGB")
-    cloth_img = Image.open(io.BytesIO(cloth_bytes)).convert("RGB")
+async def run_tryon(input_image_path: str, product_id: str, body_part: str) -> str:
+    # find your garment asset by product_id
+    garment_path = f"app/models/garments/{product_id}.png"
+    if not os.path.isfile(garment_path):
+        raise FileNotFoundError(f"Garment not found: {product_id}")
 
-    output = pipe(
-        prompt="",               # or customize
-        source_image=src_img,
-        cloth_image=cloth_img,
-        num_inference_steps=50,
-        guidance_scale=7.5,
+    # call the OOTDiffusion pipeline
+    # adjust arguments to match its signature exactly!
+    result = pipe(
+        prompt=body_part,
+        image=input_image_path,
+        garment=garment_path,
     )
+    out_img: Image.Image = result.images[0]
 
-    buf = io.BytesIO()
-    output.images[0].save(buf, format="PNG")
-    return buf.getvalue()
+    # save output
+    out_dir = "temp/tryon"
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"{uuid4().hex}.png")
+    out_img.save(out_path)
+    return out_path
