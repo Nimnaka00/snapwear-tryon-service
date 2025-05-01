@@ -1,14 +1,22 @@
-import os
+import uvicorn
 from fastapi import FastAPI
-from dotenv import load_dotenv
 from app.api.v1.tryon_routes import router as tryon_router
+from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
-load_dotenv()  # read .env
+load_dotenv()  # picks up .env
 
-app = FastAPI(title="SnapWear Try-On API", version="1.0")
+app = FastAPI(title="SnapWear Try-On Service")
 
-app.include_router(tryon_router, prefix="/api/v1/tryon", tags=["tryon"])
+# CORS (so your React front end can talk to it)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten in prod
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/")
-async def root():
-    return {"message": "SnapWear Try-On backend is up 👟"}
+app.include_router(tryon_router)
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
