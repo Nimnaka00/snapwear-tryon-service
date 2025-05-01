@@ -1,22 +1,19 @@
-import uvicorn
 from fastapi import FastAPI
-from app.api.v1.tryon_routes import router as tryon_router
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
+from app.api.v1.tryon_routes import router as tryon_router
 
-load_dotenv()  # picks up .env
+app = FastAPI()
 
-app = FastAPI(title="SnapWear Try-On Service")
-
-# CORS (so your React front end can talk to it)
+# CORS so your React dev (localhost:3000) can call it
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten in prod
+    allow_origins=["http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(tryon_router)
 
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# serve temp/ as /static
+app.mount("/static", StaticFiles(directory="temp"), name="static")
