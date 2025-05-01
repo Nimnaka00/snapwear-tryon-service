@@ -1,17 +1,25 @@
-from fastapi import APIRouter, UploadFile, File
-from fastapi.responses import FileResponse
-from services.tryon_service import process_tryon_image
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from app.services.tryon_service import run_tryon
 
 router = APIRouter()
 
-@router.post("/tryon")
-async def virtual_tryon(
-    user_photo: UploadFile = File(...),
-    clothing_photo: UploadFile = File(...)
-):
-    """
-    Upload user photo + clothing photo.
-    Returns processed try-on image.
-    """
-    output_path = await process_tryon_image(user_photo, clothing_photo)
-    return FileResponse(output_path, media_type="image/png")
+class TryOnRequest(BaseModel):
+    userImage: str     # "data:image/png;base64,..."
+    productImage: str  # same
+    bodyPart: str      # e.g. "upper_body", "lower_body", "dresses"
+
+class TryOnResponse(BaseModel):
+    outputImage: str   # "data:image/png;base64,..."
+
+@router.post("/", response_model=TryOnResponse)
+async def tryon(req: TryOnRequest):
+    try:
+        out = await run_tryon(
+            user_b64=req.userImage,
+            product_b64=req.productImage,
+            region=req.bodyPart,
+        )
+        return TryOnResponse(outputImage=out)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
