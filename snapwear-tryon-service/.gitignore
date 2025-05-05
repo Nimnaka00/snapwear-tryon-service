@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.env
+
+# Outputs
+static/outputs/
+
+# Node / Frontend (if you ever check that in)
+node_modules/
