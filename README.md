@@ -59,7 +59,8 @@ pip install -r requirements.txt
 ### 3. Run the Server
 
 ```bash
-uvicorn main:app --reload --port 8000
+.\venv\Scripts\activate
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 Visit API docs at: [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -127,4 +128,4 @@ OUTPUT_DIR=static/outputs
 
 ## 📄 License
 
-MIT © [Your Name](https://github.com/yourusername)
+MIT © [Your Name](https://github.com/Nimnaka00)
